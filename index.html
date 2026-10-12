@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Essence">
+<meta name="theme-color" content="#f2f2f7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>Essence Studio</title>
+
+<script>
+  /* ====== PEGA AQUÍ TUS DATOS ====== */
+  const APP_URL = 'PEGA_AQUI_LA_URL_DE_TU_APP_WEB';   // termina en /exec
+  const ONESIGNAL_APP_ID = 'PEGA_AQUI_TU_APP_ID';
+  const CARPETA = '/essence-control/';                 // nombre del repositorio entre barras
+</script>
+
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function (OneSignal) {
+    await OneSignal.init({
+      appId: ONESIGNAL_APP_ID,
+      serviceWorkerPath: CARPETA + 'OneSignalSDKWorker.js',
+      serviceWorkerParam: { scope: CARPETA }
+    });
+    estado(OneSignal);
+    OneSignal.Notifications.addEventListener('permissionChange', () => estado(OneSignal));
+    OneSignal.User.PushSubscription.addEventListener('change', () => estado(OneSignal));
+  });
+
+  const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const instalada = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+
+  function estado(OS) {
+    const on = OS.Notifications.permission && OS.User.PushSubscription.optedIn;
+    const b = document.getElementById('bell');
+    if (on) { b.style.display = 'none'; return; }
+    b.style.display = 'flex';
+  }
+  function activar() {
+    OneSignalDeferred.push(async function (OS) {
+      await OS.Notifications.requestPermission();
+      if (OS.Notifications.permission) await OS.User.PushSubscription.optIn();
+      estado(OS);
+    });
+  }
+  function cerrar() { document.getElementById('bell').style.display = 'none'; }
+</script>
+
+<style>
+  :root { --bg:#f2f2f7; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; } }
+  html, body { margin:0; height:100%; background:var(--bg); }
+  body { display:flex; flex-direction:column; padding-top:env(safe-area-inset-top); box-sizing:border-box; }
+  iframe { flex:1; width:100%; border:0; display:block; }
+  .banner { position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 70px); z-index:9;
+    display:none; align-items:center; gap:10px; background:#007aff; color:#fff; border-radius:14px; padding:12px 14px;
+    font:500 15px/1.3 -apple-system, BlinkMacSystemFont, sans-serif; box-shadow:0 8px 24px rgba(0,0,0,.25); }
+  .banner span { flex:1; }
+  .banner button { border:0; border-radius:10px; padding:8px 12px; font:600 15px -apple-system, sans-serif; cursor:pointer; }
+  .banner .si { background:#fff; color:#007aff; }
+  .banner .no { background:transparent; color:#fff; padding:8px 4px; }
+</style>
+</head>
+<body>
+  <div id="bell" class="banner">
+    <span id="bellTxt">🔔 Activa las notificaciones en este celular</span>
+    <button class="si" id="bellBtn" onclick="activar()">Activar</button>
+    <button class="no" onclick="cerrar()">✕</button>
+  </div>
+  <iframe id="app" allow="clipboard-write"></iframe>
+  <script>
+    document.getElementById('app').src = APP_URL;
+    // En iPhone las notificaciones solo funcionan con la app instalada en la pantalla de inicio
+    if (esIOS && !instalada) {
+      const b = document.getElementById('bell');
+      document.getElementById('bellTxt').textContent = '📲 Para recibir avisos: Compartir › Agregar a pantalla de inicio, y abre desde el ícono.';
+      document.getElementById('bellBtn').style.display = 'none';
+      b.style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
