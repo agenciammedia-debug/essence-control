@@ -1,0 +1,12 @@
+{
+  "name": "Essence Studio",
+  "short_name": "Essence",
+  "start_url": "/essence-control/",
+  "scope": "/essence-control/",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#f2f2f7",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
